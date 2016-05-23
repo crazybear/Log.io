@@ -2,11 +2,14 @@
 fs = require 'fs'
 
 ENV = '/usr/bin/env'
-BROWSERIFY = "#{ ENV } browserify"
-COFFEE = "#{ ENV } coffee"
+PWD = '/Users/Aisakazn/youku/Log.io/node_modules/'
+BROWSERIFY = "#{ PWD }/browserify/bin/cmd.js"
+COFFEE = "#{ PWD }coffee-script/bin/coffee"
 MOCHA = "#{ ENV } mocha"
-LESS = "#{ ENV } lessc"
+LESS = "#{ PWD }less/bin/lessc"
 NODE = "#{ ENV } node"
+
+console.log(NODE)
 
 TEMPLATE_SRC = "#{ __dirname }/templates"
 TEMPLATE_OUTPUT = "#{ __dirname }/src/templates.coffee"
@@ -17,7 +20,7 @@ task 'build', "Builds Log.io package", ->
   invoke 'less'
   invoke 'browserify'
   # Ensure browserify has completed
-  setTimeout (-> invoke 'func_test'), 2000
+  # setTimeout (-> invoke 'func_test'), 2000
 
 task 'compile', "Compiles CoffeeScript src/*.coffee to lib/*.js", ->
   console.log "Compiling src/*.coffee to lib/*.js"

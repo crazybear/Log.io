@@ -35,6 +35,7 @@ io = require 'socket.io'
 events = require 'events'
 winston = require 'winston'
 express = require 'express'
+dgram = require('dgram');
 
 class _LogObject
   _type: 'object'
@@ -119,6 +120,7 @@ class LogServer extends events.EventEmitter
   _handle: (socket, msg) ->
     @_log.debug "Handling message: #{msg}"
     [mtype, args...] = msg.split '|'
+    @_log.debug "mtype #{mtype}"
     switch mtype
       when '+log' then @_newLog args...
       when '+node' then @_addNode args...
@@ -172,6 +174,32 @@ class LogServer extends events.EventEmitter
 
 
 
+###
+LogServer use UDP
+###
+class UDPLogServer extends LogServer
+    run: ->
+      # Create UDP listener socket
+      @listener = dgram.createSocket 'udp4'
+      @listener._buffer = ''
+      @listener.on 'message', (message) => @_receive message, @listener
+      @listener.on 'error', => @_tearDown @listener
+      @listener.on 'close', => @_tearDown @listener
+      @listener.on 'listening', => @_log.info "UDPLogServer listening on #{@host}:#{@port}"
+      @listener.bind @port, @host
+      @_log.info "UDPLogServer bind on #{@host}:#{@port}"
+    _receive: (data, socket) =>
+      part = data.toString()
+      socket._buffer += part
+      @_log.debug "Received UDP message: #{part}"
+      @_flush socket if socket._buffer.indexOf @_delimiter >= 0
+
+    _flush: (socket) =>
+      # Handle messages in socket buffer
+      # Pause socket while modifying buffer
+      [msgs..., socket._buffer] = socket._buffer.split @_delimiter
+      socket._buffer = '';
+      @_handle socket, msg for msg in msgs
 ###
 WebServer relays LogServer events to web clients via socket.io.
 
@@ -261,4 +289,5 @@ class WebServer
     @_log.info 'Server started, listening...'
 
 exports.LogServer = LogServer
+exports.UDPLogServer = UDPLogServer
 exports.WebServer = WebServer

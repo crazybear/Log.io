@@ -1,7 +1,5 @@
 ### Log.io Web Client
-
 Listens to server for new log messages, renders them to screen "widgets".
-
 # Usage:
 wclient = new WebClient io, host: 'http://localhost:28778'
 screen = wclient.createScreen
