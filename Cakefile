@@ -9,8 +9,6 @@ MOCHA = "#{ ENV } mocha"
 LESS = "#{ PWD }less/bin/lessc"
 NODE = "#{ ENV } node"
 
-console.log(NODE)
-
 TEMPLATE_SRC = "#{ __dirname }/templates"
 TEMPLATE_OUTPUT = "#{ __dirname }/src/templates.coffee"
 
