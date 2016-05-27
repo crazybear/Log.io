@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+const dgram = require('dgram');
+const client = dgram.createSocket('udp4');
+var msg = '+log|my_stream|my_node|info|this is log message\r\n';
+if(process.argv[2]){
+    msg = process.argv[2] + '\r\n';
+    msg = msg + msg;
+}
+client.send(msg, 28777, '127.0.0.1', function(){
+    console.log('send:' + msg + ' success!');
+    client.close();
+});

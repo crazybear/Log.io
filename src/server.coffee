@@ -35,7 +35,7 @@ io = require 'socket.io'
 events = require 'events'
 winston = require 'winston'
 express = require 'express'
-dgram = require('dgram');
+dgram = require 'dgram';
 
 class _LogObject
   _type: 'object'
@@ -86,6 +86,7 @@ class LogServer extends events.EventEmitter
     @_delimiter = config.delimiter ? '\r\n'
     @logNodes = {}
     @logStreams = {}
+    @_protocol = 'TCP';
 
   run: ->
     # Create TCP listener socket
@@ -98,7 +99,7 @@ class LogServer extends events.EventEmitter
 
   _tearDown: (socket) ->
     # Destroy a client socket
-    @_log.error 'Lost TCP connection...'
+    @_log.error 'Lost #{@_protocol} connection...'
     if socket.node
       @_removeNode socket.node.name
       delete socket.node
@@ -106,7 +107,7 @@ class LogServer extends events.EventEmitter
   _receive: (data, socket) =>
     part = data.toString()
     socket._buffer += part
-    @_log.debug "Received TCP message: #{part}"
+    @_log.debug "Received #{@_protocol} message: #{part}"
     @_flush socket if socket._buffer.indexOf @_delimiter >= 0
 
   _flush: (socket) =>
@@ -128,7 +129,7 @@ class LogServer extends events.EventEmitter
       when '-node' then @_removeNode args...
       when '-stream' then @_removeStream args...
       when '+bind' then @_bindNode socket, args...
-      else @_log.error "Invalid TCP message: #{msg}"
+      else @_log.error "Invalid #{@_protocol} message: #{msg}"
 
   _addNode: (nname, snames='') ->
     @__add nname, snames, @logNodes, LogNode, 'node'
@@ -163,7 +164,7 @@ class LogServer extends events.EventEmitter
 
   _bindNode: (socket, obj, nname) ->
     if node = @logNodes[nname]
-      @_log.info "Binding node '#{nname}' to TCP socket"
+      @_log.info "Binding node '#{nname}' to #{@_protocol} socket"
       socket.node = node
       @_ping socket
 
@@ -178,6 +179,9 @@ class LogServer extends events.EventEmitter
 LogServer use UDP
 ###
 class UDPLogServer extends LogServer
+    constructor: (config={}) ->
+      super config
+      @_protocol = 'UDP'
     run: ->
       # Create UDP listener socket
       @listener = dgram.createSocket 'udp4'
@@ -188,12 +192,6 @@ class UDPLogServer extends LogServer
       @listener.on 'listening', => @_log.info "UDPLogServer listening on #{@host}:#{@port}"
       @listener.bind @port, @host
       @_log.info "UDPLogServer bind on #{@host}:#{@port}"
-    _receive: (data, socket) =>
-      part = data.toString()
-      socket._buffer += part
-      @_log.debug "Received UDP message: #{part}"
-      @_flush socket if socket._buffer.indexOf @_delimiter >= 0
-
     _flush: (socket) =>
       # Handle messages in socket buffer
       # Pause socket while modifying buffer
